@@ -681,7 +681,7 @@
 	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
 	=>
 	(assert (DescartadaQuatri ?posRecm))
-	(printout t " Eliminada por no ser del cuatrimestre " (instance-name ?posRecm) crlf)	
+	(printout t " Eliminada por tener un numero de dormitorios inferior." (instance-name ?posRecm) crlf)	
 	(send ?posRecm delete)
 )
 
@@ -692,7 +692,7 @@
 	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
 	=>
 	(assert (DescartadaQuatri ?posRecm))
-	(printout t " Eliminada por no ser del cuatrimestre " (instance-name ?posRecm) crlf)	
+	(printout t " Eliminada por tener un presupuesto inferior al minimo. " (instance-name ?posRecm) crlf)	
 	(send ?posRecm delete)
 )
 
@@ -703,7 +703,7 @@
 	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
 	=>
 	(assert (DescartadaQuatri ?posRecm))
-	(printout t " Eliminada por no ser del cuatrimestre " (instance-name ?posRecm) crlf)	
+	(printout t " Eliminada por exceder el presupuesto maximo." (instance-name ?posRecm) crlf)	
 	(send ?posRecm delete)
 )
 
