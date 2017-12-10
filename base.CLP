@@ -3,7 +3,7 @@
 	(is-a USER)
 	(role abstract)
 	(single-slot Planta
-;+		(comment "Palabras permitidas:\n- Ático\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
+;+		(comment "Palabras permitidas:\n- Ătico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
 		(type STRING)
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
@@ -20,13 +20,18 @@
 		(type INTEGER)
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
+	(single-slot Ascensor
+		(type SYMBOL)
+		(allowed-values FALSE TRUE)
+;+		(cardinality 1 1)
+		(create-accessor read-write))
 	(single-slot Hijos
 		(type SYMBOL)
 		(allowed-values FALSE TRUE)
 ;+		(cardinality 0 1)
 		(create-accessor read-write))
 	(multislot Medio
-;+		(comment "De momento esto lo tratamos como una restricción, pero deberiaos tratarlo tambien como preferencia.")
+;+		(comment "De momento esto lo tratamos como una restricciĂłn, pero deberiaos tratarlo tambien como preferencia.")
 		(type STRING)
 		(create-accessor read-write))
 	(multislot Especificacion
@@ -140,8 +145,8 @@
 ;+		(allowed-classes RestriccionCliente)
 		(create-accessor read-write))
 	(single-slot TDormitorio
-		(type SYMBOL)
-		(allowed-values Simple Doble)
+;+		(comment "Simple o bien numeral: Doble, Triple, Quadruple...etc")
+		(type INTEGER)
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
 	(single-slot numDormitorio
@@ -162,6 +167,11 @@
 		(create-accessor read-write))
 	(multislot Lejos
 		(type STRING)
+		(create-accessor read-write))
+	(single-slot Importancia
+		(type SYMBOL)
+		(allowed-values Importante)
+;+		(cardinality 0 1)
 		(create-accessor read-write))
 	(single-slot TUnifamiliar
 		(type SYMBOL)
@@ -207,7 +217,6 @@
 		(type SYMBOL)
 		(allowed-values Jardin Balcon Terraza Piscina Sotano Trastero)
 		(create-accessor read-write)))
-
 
 (defclass Vivienda
 	(is-a USER)
@@ -266,7 +275,7 @@
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
 	(single-slot Planta
-;+		(comment "Palabras permitidas:\n- Ático\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
+;+		(comment "Palabras permitidas:\n- Ătico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
 		(type STRING)
 ;+		(cardinality 1 1)
 		(create-accessor read-write)))
@@ -374,6 +383,11 @@
 		(type SYMBOL)
 		(allowed-values TotalmenteEquipada ParcialmenteEquipada Ninguna)
 ;+		(cardinality 0 1)
+		(create-accessor read-write))
+	(single-slot Ascensor
+		(type SYMBOL)
+		(allowed-values FALSE TRUE)
+;+		(cardinality 1 1)
 		(create-accessor read-write)))
 
 (defclass Cliente
@@ -468,8 +482,8 @@
 	(is-a Habitacion)
 	(role concrete)
 	(single-slot TDormitorio
-		(type SYMBOL)
-		(allowed-values Simple Doble)
+;+		(comment "Simple o bien numeral: Doble, Triple, Quadruple...etc")
+		(type INTEGER)
 ;+		(cardinality 1 1)
 		(create-accessor read-write)))
 
@@ -568,26 +582,28 @@
 		(allowed-values Trabajo Ocio)
 ;+		(cardinality 0 1)
 		(create-accessor read-write)))
-
 (defclass Recomendacion
 	(is-a USER)
 	(role concrete)
-	(multislot justificacionU
-		(type STRING)
-		(create-accessor read-write))
 	(single-slot recomendacion
 		(type INSTANCE)
-;+		(allowed-classes Asignatura)
+;+		(allowed-classes Vivienda)
 ;+		(cardinality 0 1)
 		(create-accessor read-write))
-	(single-slot gradoRecomendacion
+	(single-slot grado
+		(type SYMBOL)
+		(allowed-values Parcial Recomendado Excelente)
+		(create-accessor read-write))
+	(single-slot numFallo
 		(type INTEGER)
+		(default 0)
 ;+		(cardinality 0 1)
 		(create-accessor read-write))
-	(multislot justificacionS
+	(multislot justificacion
 		(type STRING)
 		(create-accessor read-write)))
-;;;INSTANCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;INSTANCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;FUNCIONES AUXILIARES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deffunction pregunta-lista (?pregunta $?valores_posibles) 
@@ -616,7 +632,7 @@
 (defrule tipocliente "regla para definir tipo del cliente"
 	(initial-fact)
 	=> 
-	(printout t "�Seria solo usted o bien con su pareja, familia tal vez? " crlf)
+	(printout t "żSeria solo usted o bien con su pareja, familia tal vez? " crlf)
 	(printout t "1: Yo solo " crlf)	  	
 	(printout t "2: Seriamos una pareja " crlf)
 	(printout t "3: Somos una familia" crlf)
@@ -653,25 +669,65 @@
 		(send ?inst put-recomendacion (instance-address (nth$ ?i ?allViv)))
 	)
         (printout t "Eligiendo..." crlf)
+
 )
 
 
-(defrule descartandoPorNumHab1 "obtener segun num habitaciones de la casa"
-	(tc ?x)
-	;?posRecm  <- (object (is-a Recomendacion) (recomendacion ?vivRec))
-	;?viv <- (object (is-a Vivienda) (numDormitorios ?nd)) 
-       	;(test (and (eq ?viv ?vivRec)(> ?x ?nd)))
+
+(defrule descartandoPorNumDormitorios"regla para descartar casas que no tengan el num. dormitorios requerido"
+	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
+	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
+	(Cuatrimestre ?Q)
+	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
 	=>
-	;(send ?posRecm delete)
-	(printout t "Eligiendo ?x ..." crlf)
-;)
+	(assert (DescartadaQuatri ?posRecm))
+	(printout t " Eliminada por no ser del cuatrimestre " (instance-name ?posRecm) crlf)	
+	(send ?posRecm delete)
 )
-;;;;;;MODULO 3: PUNTUAR INSTANCIAS SEGUN LAS PREFERENCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;MODULO 4: MOSTRAR INSTANCIAS AL USUARIO;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defmodule escribir
+
+(defrule descartandoPorPresupuestoMin "regla para descartar casas que tengan un presupuesto minimo al inferior"
+	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
+	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
+	(Cuatrimestre ?Q)
+	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
+	=>
+	(assert (DescartadaQuatri ?posRecm))
+	(printout t " Eliminada por no ser del cuatrimestre " (instance-name ?posRecm) crlf)	
+	(send ?posRecm delete)
+)
+
+(defrule descartandoPorPresupuestoMax "regla para descartar casas que tengan un presupuesto superior al maximo"
+	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
+	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
+	(Cuatrimestre ?Q)
+	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
+	=>
+	(assert (DescartadaQuatri ?posRecm))
+	(printout t " Eliminada por no ser del cuatrimestre " (instance-name ?posRecm) crlf)	
+	(send ?posRecm delete)
+)
+
+;;;;;;MODULO 3: DESCARTE SEGUN PREFERENCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defmodule descartepeor
 	(import MAIN ?ALL)  
 	(import filtrado ?ALL)
 	(import preguntas ?ALL) 
 	(export ?ALL)
 )
-
+;;;;;;MODULO 4: ELEGIR LAS INSTANCIAS MAS SOBRESALIENTES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defmodule elegirmejor
+	(import MAIN ?ALL)  
+	(import filtrado ?ALL)
+	(import descartepeor ?ALL)
+	(import preguntas ?ALL)
+	(export ?ALL)
+)
+;;;;;;MODULO 5: MOSTRAR INSTANCIAS AL USUARIO;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defmodule escribir
+	(import MAIN ?ALL)  
+	(import filtrado ?ALL)
+	(import descartepeor ?ALL)
+	(import preguntas ?ALL)
+	(import elegirmejor ?ALL)
+	(export ?ALL)
+)
