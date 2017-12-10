@@ -1,23 +1,15 @@
-;;;CLASES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;CLASES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defclass %3ACLIPS_TOP_LEVEL_SLOT_CLASS "Fake class to save top-level slot information"
 	(is-a USER)
 	(role abstract)
 	(single-slot Planta
-;+		(comment "Palabras permitidas:\n- ¡tico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
+;+		(comment "Palabras permitidas:\n- √Åtico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
 		(type STRING)
 ;+		(cardinality 1 1)
-		(create-accessor read-write))
-	(single-slot numDormitorios
-		(type INTEGER)
-;+		(cardinality 1 1)
-		(create-accessor read-write))
-	(single-slot ontologia1.0_Class20032
-		(type STRING)
-;+		(cardinality 0 1)
 		(create-accessor read-write))
 	(single-slot LuzNatural
 		(type SYMBOL)
-		(allowed-values Continua Ma%C3%B1ana Tarde Ninguna)
+		(allowed-values Continua Madrugada Tarde Ninguna)
 ;+		(cardinality 0 1)
 		(create-accessor read-write))
 	(single-slot Calle
@@ -34,8 +26,13 @@
 ;+		(cardinality 0 1)
 		(create-accessor read-write))
 	(multislot Medio
-;+		(comment "De momento esto lo tratamos como una restricciÛn, pero deberiaos tratarlo tambien como preferencia.")
+;+		(comment "De momento esto lo tratamos como una restricci√≥n, pero deberiaos tratarlo tambien como preferencia.")
 		(type STRING)
+		(create-accessor read-write))
+	(multislot Especificacion
+;+		(comment "Caracteristica")
+		(type INSTANCE)
+;+		(allowed-classes Caracteristica)
 		(create-accessor read-write))
 	(single-slot Hab
 		(type STRING)
@@ -51,6 +48,10 @@
 		(allowed-values TotalmenteEquipada ParcialmenteEquipada Ninguna)
 ;+		(cardinality 0 1)
 		(create-accessor read-write))
+	(single-slot numAseo
+		(type INTEGER)
+;+		(cardinality 1 1)
+		(create-accessor read-write))
 	(single-slot ConsumoEnergetico
 		(type SYMBOL)
 		(allowed-values A B C D E)
@@ -60,15 +61,6 @@
 		(type SYMBOL)
 		(allowed-values Piso Duplex Triplex Cuadruplex Quintuplex Sextuplex)
 ;+		(cardinality 1 1)
-		(create-accessor read-write))
-	(single-slot ontologia1.0_Class20025
-		(type STRING)
-;+		(cardinality 0 1)
-		(create-accessor read-write))
-	(multislot A%C3%B1adido
-;+		(comment "Caracteristica")
-		(type INSTANCE)
-;+		(allowed-classes Caracteristica)
 		(create-accessor read-write))
 	(single-slot PrecioMinimo
 		(type INTEGER)
@@ -152,6 +144,10 @@
 		(allowed-values Simple Doble)
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
+	(single-slot numDormitorio
+		(type INTEGER)
+;+		(cardinality 1 1)
+		(create-accessor read-write))
 	(multislot Necesidad
 		(type INSTANCE)
 ;+		(allowed-classes NecesidadCliente)
@@ -191,14 +187,10 @@
 		(create-accessor read-write))
 	(multislot Edad
 		(type INTEGER)
-		(range 0 %3FVARIABLE)
+		(range 0 150)
 		(cardinality 1 ?VARIABLE)
 		(create-accessor read-write))
 	(single-slot NumIntegrantes
-		(type INTEGER)
-;+		(cardinality 1 1)
-		(create-accessor read-write))
-	(single-slot numBa%C3%B1os
 		(type INTEGER)
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
@@ -208,7 +200,7 @@
 		(create-accessor read-write))
 	(single-slot TServicio
 		(type SYMBOL)
-		(allowed-values Transporte Educaci%C3%B3n Sanidad Ocio Hosteleria Comercio)
+		(allowed-values Transporte Educacion Sanidad Ocio Hosteleria Comercio)
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
 	(multislot Espacio
@@ -216,10 +208,11 @@
 		(allowed-values Jardin Balcon Terraza Piscina Sotano Trastero)
 		(create-accessor read-write)))
 
+
 (defclass Vivienda
 	(is-a USER)
 	(role abstract)
-	(multislot A%C3%B1adido
+	(multislot Especificacion
 ;+		(comment "Caracteristica")
 		(type INSTANCE)
 ;+		(allowed-classes Caracteristica)
@@ -234,11 +227,7 @@
 ;+		(allowed-classes Habitacion)
 		(cardinality 1 ?VARIABLE)
 		(create-accessor read-write))
-	(single-slot numBa%C3%B1os
-		(type INTEGER)
-;+		(cardinality 1 1)
-		(create-accessor read-write))
-	(single-slot numDormitorios
+	(single-slot numDormitorio
 		(type INTEGER)
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
@@ -251,6 +240,10 @@
 ;+		(allowed-classes Exterior)
 		(create-accessor read-write))
 	(single-slot Superficie
+		(type INTEGER)
+;+		(cardinality 1 1)
+		(create-accessor read-write))
+	(single-slot numAseo
 		(type INTEGER)
 ;+		(cardinality 1 1)
 		(create-accessor read-write)))
@@ -273,7 +266,7 @@
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
 	(single-slot Planta
-;+		(comment "Palabras permitidas:\n- ¡tico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
+;+		(comment "Palabras permitidas:\n- √Åtico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
 		(type STRING)
 ;+		(cardinality 1 1)
 		(create-accessor read-write)))
@@ -288,7 +281,7 @@
 		(create-accessor read-write))
 	(single-slot TServicio
 		(type SYMBOL)
-		(allowed-values Transporte Educaci%C3%B3n Sanidad Ocio Hosteleria Comercio)
+		(allowed-values Transporte Educacion Sanidad Ocio Hosteleria Comercio)
 ;+		(cardinality 1 1)
 		(create-accessor read-write)))
 
@@ -350,7 +343,7 @@
 		(create-accessor read-write))
 	(single-slot LuzNatural
 		(type SYMBOL)
-		(allowed-values Continua Ma%C3%B1ana Tarde Ninguna)
+		(allowed-values Continua Madrugada Tarde Ninguna)
 ;+		(cardinality 0 1)
 		(create-accessor read-write))
 	(single-slot Reforma
@@ -409,7 +402,7 @@
 		(create-accessor read-write))
 	(multislot Edad
 		(type INTEGER)
-		(range 0 %3FVARIABLE)
+		(range 0 150)
 		(cardinality 1 ?VARIABLE)
 		(create-accessor read-write)))
 
@@ -484,7 +477,7 @@
 	(is-a Habitacion)
 	(role concrete))
 
-(defclass Ba%C3%B1o
+(defclass Aseo
 	(is-a Habitacion)
 	(role concrete))
 
@@ -518,7 +511,7 @@
 		(create-accessor read-write))
 	(single-slot TServicio
 		(type SYMBOL)
-		(allowed-values Transporte Educaci%C3%B3n Sanidad Ocio Hosteleria Comercio)
+		(allowed-values Transporte Educacion Sanidad Ocio Hosteleria Comercio)
 ;+		(cardinality 1 1)
 		(create-accessor read-write)))
 
@@ -545,7 +538,7 @@
 		(create-accessor read-write))
 	(single-slot TServicio
 		(type SYMBOL)
-		(allowed-values Transporte Educaci%C3%B3n Sanidad Ocio Hosteleria Comercio)
+		(allowed-values Transporte Educacion Sanidad Ocio Hosteleria Comercio)
 ;+		(cardinality 1 1)
 		(create-accessor read-write)))
 
@@ -576,7 +569,6 @@
 ;+		(cardinality 0 1)
 		(create-accessor read-write)))
 
-
 (defclass Recomendacion
 	(is-a USER)
 	(role concrete)
@@ -595,8 +587,7 @@
 	(multislot justificacionS
 		(type STRING)
 		(create-accessor read-write)))
-;;;INSTANCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;;INSTANCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;FUNCIONES AUXILIARES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deffunction pregunta-lista (?pregunta $?valores_posibles) 
@@ -666,12 +657,13 @@
 
 
 (defrule descartandoPorNumHab1 "obtener segun num habitaciones de la casa"
-	(tc 1)
-	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?vivRec))
-	?viv <- (object (is-a Vivienda) (numDormitorios ?nd)) 
-       	(test (and (eq ?viv ?vivRec)(> 1 ?nd)))
+	(tc ?x)
+	;?posRecm  <- (object (is-a Recomendacion) (recomendacion ?vivRec))
+	;?viv <- (object (is-a Vivienda) (numDormitorios ?nd)) 
+       	;(test (and (eq ?viv ?vivRec)(> ?x ?nd)))
 	=>
-	(send ?posRecm delete)
+	;(send ?posRecm delete)
+	(printout t "Eligiendo ?x ..." crlf)
 ;)
 )
 ;;;;;;MODULO 3: PUNTUAR INSTANCIAS SEGUN LAS PREFERENCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -682,3 +674,4 @@
 	(import preguntas ?ALL) 
 	(export ?ALL)
 )
+
