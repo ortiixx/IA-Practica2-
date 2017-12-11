@@ -596,7 +596,6 @@
 		(create-accessor read-write))
 	(single-slot numFallo
 		(type INTEGER)
-		(default 0)
 ;+		(cardinality 0 1)
 		(create-accessor read-write))
 	(multislot justificacion
@@ -612,8 +611,9 @@
 	(bind ?res (str-explode ?resposta))   
 	?res
 )
+(deffunction pregunta-int (?pregunta))
 
-
+;;;MESSAGE HANDLER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;MAIN;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule MAIN (export ?ALL))
 (defrule comienzo "inicio"
@@ -632,7 +632,7 @@
 (defrule tipocliente "regla para definir tipo del cliente"
 	(initial-fact)
 	=> 
-	(printout t "Å¼Seria solo usted o bien con su pareja, familia tal vez? " crlf)
+	(printout t "Seria solo usted o bien con su pareja, familia tal vez? " crlf)
 	(printout t "1: Yo solo " crlf)	  	
 	(printout t "2: Seriamos una pareja " crlf)
 	(printout t "3: Somos una familia" crlf)
@@ -658,54 +658,54 @@
 )
  
 (defrule obtenerCasas
-	(initial-fact)
 	(cliente)
 	=>
 	(bind $?allViv (find-all-instances((?inst Vivienda)) TRUE))
 	(loop-for-count (?i 1 (length$ ?allViv)) do
 		(bind ?viv (nth$ ?i ?allViv)) 
-		(bind ?nR (sym-cat R**(send ?viv get-nombreAsig)))	 
-		(bind ?inst (make-instance ?nR of Recomendacion))
+ 		(bind ?nR (str-cat "Propuesta de casa nº" ?i))
+		(bind ?inst (make-instance ?nR of Recomendacion(grado recomendable)))
 		(send ?inst put-recomendacion (instance-address (nth$ ?i ?allViv)))
 	)
-        (printout t "Eligiendo..." crlf)
+        (printout t "Considerando casas posibles ..." crlf)
+	(focus descartepeor)
 
 )
 
 
 
-(defrule descartandoPorNumDormitorios"regla para descartar casas que no tengan el num. dormitorios requerido"
-	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
-	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
-	(Cuatrimestre ?Q)
-	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
-	=>
-	(assert (DescartadaQuatri ?posRecm))
-	(printout t " Eliminada por tener un numero de dormitorios inferior." (instance-name ?posRecm) crlf)	
-	(send ?posRecm delete)
-)
+;(defrule descartandoPorNumDormitorios"regla para descartar casas que no tengan el num. dormitorios requerido"
+;	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
+;	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
+;	(Cuatrimestre ?Q)
+;	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
+;	=>
+;	(assert (DescartadaQuatri ?posRecm))
+;	(printout t " Eliminada por tener un numero de dormitorios inferior." (instance-name ?posRecm) crlf)	
+;	(send ?posRecm delete)
+;)
 
-(defrule descartandoPorPresupuestoMin "regla para descartar casas que tengan un presupuesto minimo al inferior"
-	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
-	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
-	(Cuatrimestre ?Q)
-	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
-	=>
-	(assert (DescartadaQuatri ?posRecm))
-	(printout t " Eliminada por tener un presupuesto inferior al minimo. " (instance-name ?posRecm) crlf)	
-	(send ?posRecm delete)
-)
+;(defrule descartandoPorPresupuestoMin "regla para descartar casas que tengan un presupuesto minimo al inferior"
+;	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
+;	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
+;	(Cuatrimestre ?Q)
+;	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
+;	=>
+;	(assert (DescartadaQuatri ?posRecm))
+;	(printout t " Eliminada por tener un presupuesto inferior al minimo. " (instance-name ?posRecm) crlf)	
+;	(send ?posRecm delete)
+;)
 
-(defrule descartandoPorPresupuestoMax "regla para descartar casas que tengan un presupuesto superior al maximo"
-	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
-	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
-	(Cuatrimestre ?Q)
-	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
-	=>
-	(assert (DescartadaQuatri ?posRecm))
-	(printout t " Eliminada por exceder el presupuesto maximo." (instance-name ?posRecm) crlf)	
-	(send ?posRecm delete)
-)
+;(defrule descartandoPorPresupuestoMax "regla para descartar casas que tengan un presupuesto superior al maximo"
+;	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
+;	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
+;	(Cuatrimestre ?Q)
+;	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
+;	=>
+;	(assert (DescartadaQuatri ?posRecm))
+;	(printout t " Eliminada por exceder el presupuesto maximo." (instance-name ?posRecm) crlf)	
+;	(send ?posRecm delete)
+;)
 
 ;;;;;;MODULO 3: DESCARTE SEGUN PREFERENCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule descartepeor
@@ -713,6 +713,28 @@
 	(import filtrado ?ALL)
 	(import preguntas ?ALL) 
 	(export ?ALL)
+)
+(defrule restamobilidad "Sumamos un uno y pasa a ser poco recomendable cualquier instancia"
+	?mob <-(object (is-a NMobilidad)(Transporte ?tp))
+	(test (neq coche ?tp))
+	=>	
+	(bind $?allRec (find-all-instances((?inst Recomendacion)) TRUE))
+	(loop-for-count (?i 1 (length$ ?allRec)) do
+		(bind ?rec (nth$ ?i ?allRec)) 
+		(if (and(not calculcerc)(not calculmedio))
+			(bind ?n (send ?rec get-numFallo))
+			(bind ?n (+ 1 ?n))
+			(send ?rec put-numFallo ?n)
+			(send ?rec put-grado Parcial)	 
+		);definir una funcion que busque si hay o no transporte cerca o medio de una vivienda
+	)
+)
+(defrule elimina3 "Eliminamos la casa que no cumpla con mas de tres preferencias"
+	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec)(numFallo ?g))
+	(test(> 3 ?g))
+	=>
+	(printout t " Eliminada por exceder el numero de preferencias no cumplidas." (instance-name ?posRecm) crlf)	
+	(send ?posRecm delete)
 )
 ;;;;;;MODULO 4: ELEGIR LAS INSTANCIAS MAS SOBRESALIENTES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule elegirmejor
@@ -722,6 +744,8 @@
 	(import preguntas ?ALL)
 	(export ?ALL)
 )
+
+
 ;;;;;;MODULO 5: MOSTRAR INSTANCIAS AL USUARIO;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule escribir
 	(import MAIN ?ALL)  
