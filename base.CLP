@@ -714,14 +714,48 @@
 	(import preguntas ?ALL) 
 	(export ?ALL)
 )
-(defrule restamobilidad "Sumamos un uno y pasa a ser poco recomendable cualquier instancia"
+(defrule restamobilidadpub "Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga ningun transporte publico cerca"
 	?mob <-(object (is-a NMobilidad)(Transporte ?tp))
-	(test (neq coche ?tp))
+	(test (neq Coche ?tp))
 	=>	
 	(bind $?allRec (find-all-instances((?inst Recomendacion)) TRUE))
 	(loop-for-count (?i 1 (length$ ?allRec)) do
 		(bind ?rec (nth$ ?i ?allRec)) 
 		(if (and(not calculcerc)(not calculmedio))
+			(bind ?n (send ?rec get-numFallo))
+			(bind ?n (+ 1 ?n))
+			(send ?rec put-numFallo ?n)
+			(send ?rec put-grado Parcial)	 
+		);definir una funcion que busque si hay o no transporte cerca o medio de una vivienda
+	)
+)
+(defrule restamobilidadcoche "Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga un garage"
+	?mob <-(object (is-a NMobilidad)(Transporte ?tp))
+	(test (eq Coche ?tp))
+	=>	
+	(bind $?allRec (find-all-instances((?inst Recomendacion)) TRUE))
+	(loop-for-count (?i 1 (length$ ?allRec)) do
+		(bind ?rec (nth$ ?i ?allRec)) 
+		(bind ?viv (send ?rec get-recomendacion))
+		(bind $?allext (send ?viv get-EspacioExterior))
+		(if ;hay que poner algo para saber si existe una instancia de garaje ;then 
+			(bind ?n (send ?rec get-numFallo))
+			(bind ?n (+ 1 ?n))
+			(send ?rec put-numFallo ?n)
+			(send ?rec put-grado Parcial)	 
+		);definir una funcion que busque si hay o no transporte cerca o medio de una vivienda
+	)
+)
+(defrule restadistanciacerca"Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga cerca lo indicado"
+	?mob <-(object (is-a NDistancia)(TServicio ?ts)(TDistancia ?td))
+	(test (eq Cerca ?td))
+	=>	
+	(bind $?allRec (find-all-instances((?inst Recomendacion)) TRUE))
+	(loop-for-count (?i 1 (length$ ?allRec)) do
+		(bind ?rec (nth$ ?i ?allRec)) 
+		(bind ?viv (send ?rec get-recomendacion))
+		(bind (send ?viv get-localizacion))
+		(if ;hay que poner algo para saber si existe una instancia de garaje ;then 
 			(bind ?n (send ?rec get-numFallo))
 			(bind ?n (+ 1 ?n))
 			(send ?rec put-numFallo ?n)
