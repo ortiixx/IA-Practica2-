@@ -1,9 +1,9 @@
-;;;;;CLASES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+﻿;;;;;CLASES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defclass %3ACLIPS_TOP_LEVEL_SLOT_CLASS "Fake class to save top-level slot information"
 	(is-a USER)
 	(role abstract)
 	(single-slot Planta
-;+		(comment "Palabras permitidas:\n- Ătico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
+;+		(comment "Palabras permitidas:\n- Ä‚Âtico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
 		(type STRING)
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
@@ -31,7 +31,7 @@
 ;+		(cardinality 0 1)
 		(create-accessor read-write))
 	(multislot Medio
-;+		(comment "De momento esto lo tratamos como una restricciĂłn, pero deberiaos tratarlo tambien como preferencia.")
+;+		(comment "De momento esto lo tratamos como una restricciÄ‚Ĺ‚n, pero deberiaos tratarlo tambien como preferencia.")
 		(type STRING)
 		(create-accessor read-write))
 	(multislot Especificacion
@@ -275,7 +275,7 @@
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
 	(single-slot Planta
-;+		(comment "Palabras permitidas:\n- Ătico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
+;+		(comment "Palabras permitidas:\n- Ä‚Âtico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
 		(type STRING)
 ;+		(cardinality 1 1)
 		(create-accessor read-write)))
@@ -529,14 +529,6 @@
 ;+		(cardinality 1 1)
 		(create-accessor read-write)))
 
-(defclass NMobilidad
-	(is-a NecesidadCliente)
-	(role concrete)
-	(single-slot Transporte
-		(type SYMBOL)
-		(allowed-values Metro Bus Coche)
-;+		(cardinality 1 1)
-		(create-accessor read-write)))
 
 (defclass RestriccionCliente
 	(is-a USER)
@@ -602,6 +594,16 @@
 		(type STRING)
 		(create-accessor read-write)))
 
+(defclass NMobilidad
+	(is-a NecesidadCliente)
+	(role concrete)
+	(single-slot Transporte
+		(type SYMBOL)
+		(allowed-values Metro Bus Coche)
+;+		(cardinality 1 1)
+		(create-accessor read-write)
+	)
+)
 ;;;;;;INSTANCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;FUNCIONES AUXILIARES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -609,6 +611,16 @@
 	(format t "%s" ?pregunta)  
 	(bind ?resposta (readline))  
 	(bind ?res (str-explode ?resposta))   
+	?res
+)
+(deffunction calculdistancia "Dados dos coordenadas te dice la distancia manhattan" ($?dist1)
+	(bind ?x1 (nth$ 1 ?dist1))
+	(bind ?y1 (nth$ 2 ?dist1))
+	(bind ?x2 (nth$ 3 ?dist1))
+	(bind ?y2 (nth$ 4 ?dist1))
+	(bind ?distx (abs(- ?x1 ?x2)))
+	(bind ?disty (abs(- ?y1 ?y2)))
+	(bind ?res (+ ?disty ?distx)) 
 	?res
 )
 (deffunction pregunta-int (?pregunta))
@@ -637,7 +649,7 @@
 	(printout t "2: Seriamos una pareja " crlf)
 	(printout t "3: Somos una familia" crlf)
 	(printout t "4: Somos un grupo de personas" crlf)
-	(bind ?tc (pregunta-lista "Elija una opcion"))
+	(bind ?tc (pregunta-lista "Elija una opcion:"))
 
 	(switch ?tc
 		(case 1 then  (assert (tc 1)))
@@ -663,7 +675,7 @@
 	(bind $?allViv (find-all-instances((?inst Vivienda)) TRUE))
 	(loop-for-count (?i 1 (length$ ?allViv)) do
 		(bind ?viv (nth$ ?i ?allViv)) 
- 		(bind ?nR (str-cat "Propuesta de casa n�" ?i))
+ 		(bind ?nR (str-cat "Propuesta de casa numero " ?i))
 		(bind ?inst (make-instance ?nR of Recomendacion(grado recomendable)))
 		(send ?inst put-recomendacion (instance-address (nth$ ?i ?allViv)))
 	)
@@ -675,36 +687,32 @@
 
 
 ;(defrule descartandoPorNumDormitorios"regla para descartar casas que no tengan el num. dormitorios requerido"
-;	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
-;	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
-;	(Cuatrimestre ?Q)
-;	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
+;	?posViv  <- (object (is-a Vivienda) (numDormitorio ?numDorm))
+;	?numPers <- ;funcion para calcular num. personas  
 ;	=>
-;	(assert (DescartadaQuatri ?posRecm))
+;	(assert (DescartadaNumDorm ?posViv))
 ;	(printout t " Eliminada por tener un numero de dormitorios inferior." (instance-name ?posRecm) crlf)	
-;	(send ?posRecm delete)
+;	(send ?posViv delete)
 ;)
 
 ;(defrule descartandoPorPresupuestoMin "regla para descartar casas que tengan un presupuesto minimo al inferior"
-;	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
-;	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
-;	(Cuatrimestre ?Q)
-;	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
+;	?posViv  <- (object (is-a Vivienda) (Precio ?precioViv))
+;	?client <- (object (is-a Cliente) (PrecioMinimo ?precMin))
+;	(test (< ?precioViv ?precMin))  
 ;	=>
-;	(assert (DescartadaQuatri ?posRecm))
-;	(printout t " Eliminada por tener un presupuesto inferior al minimo. " (instance-name ?posRecm) crlf)	
-;	(send ?posRecm delete)
+;	(assert (DescartadaPresmin ?posViv))
+;	(printout t " Eliminada por tener un precio inferior al minimo aceptable. " (instance-name ?posViv) crlf)	
+;	(send ?posViv delete)
 ;)
 
 ;(defrule descartandoPorPresupuestoMax "regla para descartar casas que tengan un presupuesto superior al maximo"
-;	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
-;	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
-;	(Cuatrimestre ?Q)
-;	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
+;	?posViv  <- (object (is-a Vivienda) (Precio ?precioViv))
+;	?client <- (object (is-a Cliente) (Presupuesto ?presCli))
+;	(test (> ?precioViv ?presCli))  
 ;	=>
-;	(assert (DescartadaQuatri ?posRecm))
-;	(printout t " Eliminada por exceder el presupuesto maximo." (instance-name ?posRecm) crlf)	
-;	(send ?posRecm delete)
+;	(assert (DescartadaPresmax ?posViv))
+;	(printout t " Eliminada por tener un precio superior al presupuesto del cliente. " (instance-name ?posViv) crlf)	
+;	(send ?posViv delete)
 ;)
 
 ;;;;;;MODULO 3: DESCARTE SEGUN PREFERENCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -714,55 +722,63 @@
 	(import preguntas ?ALL) 
 	(export ?ALL)
 )
-(defrule restamobilidadpub "Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga ningun transporte publico cerca"
-	?mob <-(object (is-a NMobilidad)(Transporte ?tp))
-	(test (neq Coche ?tp))
+
+(defrule restamobilidadmetro "Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga ningun metro cerca"
+	?mob <- (object (is-a NMobilidad))
+	;(test(eq Metro ?tp))
 	=>	
-	(bind $?allRec (find-all-instances((?inst Recomendacion)) TRUE))
-	(loop-for-count (?i 1 (length$ ?allRec)) do
-		(bind ?rec (nth$ ?i ?allRec)) 
-		(if (and(not calculcerc)(not calculmedio))
-			(bind ?n (send ?rec get-numFallo))
-			(bind ?n (+ 1 ?n))
-			(send ?rec put-numFallo ?n)
-			(send ?rec put-grado Parcial)	 
-		);definir una funcion que busque si hay o no transporte cerca o medio de una vivienda
-	)
+	;(bind $?allRec (find-all-instances((?inst Recomendacion)) TRUE))
+	;(loop-for-count (?i 1 (length$ ?allRec)) do
+	;	(bind ?rec (nth$ ?i ?allRec)) 
+	;	(bind $?dist (send ?rec get-Situacion))
+	;	(bind $?metroparade (find-all-instances (?instserv Servicio) (and(= ?instserv:TServicio Metro)(<=(calculdistancia (?instser:Situacion) ?dist) 1000) ) ) )
+	;	(if (eq 0 (length$ ?metroparade))
+	;		(bind ?n (send ?rec get-numFallo))
+	;		(bind ?n (+ 1 ?n))
+	;		(send ?rec put-numFallo ?n)
+	;		(send ?rec put-grado Parcial)
+	;		(slot-insert$ ?posRecm justificacion 1 "Esta casa no tiene un metro cerca o a media distancia.")
+	;		(send ?rec put-justificacion )	 
+	;	)
+	;)
 )
-(defrule restamobilidadcoche "Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga un garage"
-	?mob <-(object (is-a NMobilidad)(Transporte ?tp))
-	(test (eq Coche ?tp))
-	=>	
-	(bind $?allRec (find-all-instances((?inst Recomendacion)) TRUE))
-	(loop-for-count (?i 1 (length$ ?allRec)) do
-		(bind ?rec (nth$ ?i ?allRec)) 
-		(bind ?viv (send ?rec get-recomendacion))
-		(bind $?allext (send ?viv get-EspacioExterior))
-		(if ;hay que poner algo para saber si existe una instancia de garaje ;then 
-			(bind ?n (send ?rec get-numFallo))
-			(bind ?n (+ 1 ?n))
-			(send ?rec put-numFallo ?n)
-			(send ?rec put-grado Parcial)	 
-		);definir una funcion que busque si hay o no transporte cerca o medio de una vivienda
-	)
-)
-(defrule restadistanciacerca"Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga cerca lo indicado"
-	?mob <-(object (is-a NDistancia)(TServicio ?ts)(TDistancia ?td))
-	(test (eq Cerca ?td))
-	=>	
-	(bind $?allRec (find-all-instances((?inst Recomendacion)) TRUE))
-	(loop-for-count (?i 1 (length$ ?allRec)) do
-		(bind ?rec (nth$ ?i ?allRec)) 
-		(bind ?viv (send ?rec get-recomendacion))
-		(bind (send ?viv get-localizacion))
-		(if ;hay que poner algo para saber si existe una instancia de garaje ;then 
-			(bind ?n (send ?rec get-numFallo))
-			(bind ?n (+ 1 ?n))
-			(send ?rec put-numFallo ?n)
-			(send ?rec put-grado Parcial)	 
-		);definir una funcion que busque si hay o no transporte cerca o medio de una vivienda
-	)
-)
+
+;(defrule restamobilidadcoche "Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga un garage"
+;	?mob <-(object (is-a NMobilidad)(Transporte ?tp))
+;	(test (eq Coche ?tp))
+;	=>	
+;	(bind $?allRec (find-all-instances((?inst Recomendacion)) TRUE))
+;	(loop-for-count (?i 1 (length$ ?allRec)) do
+;		(bind ?rec (nth$ ?i ?allRec)) 
+;		(bind ?viv (send ?rec get-recomendacion))
+;		(bind $?allext (send ?viv get-EspacioExterior))
+;		(if ;hay que poner algo para saber si existe una instancia de garaje ;then 
+;			(bind ?n (send ?rec get-numFallo))
+;			(bind ?n (+ 1 ?n))
+;			(send ?rec put-numFallo ?n)
+;			(send ?rec put-grado Parcial)	 
+;		);definir una funcion que busque si hay o no transporte cerca o medio de una vivienda
+;	)
+;)
+
+;(defrule restadistanciacerca"Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga cerca lo indicado"
+;	?mob <-(object (is-a NDistancia)(TServicio ?ts)(TDistancia ?td))
+;	(test (eq Cerca ?td))
+;	=>	
+;	(bind $?allRec (find-all-instances((?inst Recomendacion)) TRUE))
+;	(loop-for-count (?i 1 (length$ ?allRec)) do
+;		(bind ?rec (nth$ ?i ?allRec)) 
+;		(bind ?viv (send ?rec get-recomendacion))
+;		(bind (send ?viv get-localizacion))
+;		(if ;hay que poner algo para saber si existe una instancia de garaje ;then 
+;			(bind ?n (send ?rec get-numFallo))
+;			(bind ?n (+ 1 ?n))
+;			(send ?rec put-numFallo ?n)
+;			(send ?rec put-grado Parcial)	 
+;		);definir una funcion que busque si hay o no transporte cerca o medio de una vivienda
+;	)
+;)
+
 (defrule elimina3 "Eliminamos la casa que no cumpla con mas de tres preferencias"
 	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec)(numFallo ?g))
 	(test(> 3 ?g))
@@ -770,6 +786,7 @@
 	(printout t " Eliminada por exceder el numero de preferencias no cumplidas." (instance-name ?posRecm) crlf)	
 	(send ?posRecm delete)
 )
+
 ;;;;;;MODULO 4: ELEGIR LAS INSTANCIAS MAS SOBRESALIENTES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule elegirmejor
 	(import MAIN ?ALL)  
