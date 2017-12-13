@@ -852,3 +852,21 @@
 	(import elegirmejor ?ALL)
 	(export ?ALL)
 )
+
+(defrule obtenerRecomendaciones "regla para obtener todas las recomendaciones generadas"
+
+=>
+(assert(FIN))
+)
+
+(defrule ordenarRecomendaciones "regla para ordenar las recomendaciones"
+
+=>
+(assert(FIN))
+)
+
+(defrule sinRecomendaciones "regla para mostrar la ausencia de recomendaciones generadas"
+
+=>
+(assert(FIN))
+)
