@@ -736,6 +736,7 @@
 	(send ?posViv delete)
 )
 
+
 (defrule finRestricciones "En esta regla finalizamos el proceso de eliminacion de instancias y pasamos al siguiente modulo"
 	(cliente)
 	=>
@@ -743,7 +744,6 @@
 	(printout t "---------- Fin del modulo de restricciones. ----------" crlf)
 	(printout t crlf) 
 	(focus descartepeor)
-)
 
 ;;;;;;MODULO 3: DESCARTE SEGUN PREFERENCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule descartepeor
@@ -813,6 +813,7 @@
 	(send ?posRecm delete)
 )
 
+
 (defrule finDescPref "En esta regla finalizamos el proceso de puntuacion de instancias y pasamos al siguiente modulo"
 	(cliente)
 	=>
@@ -821,6 +822,7 @@
 	(printout t crlf) 
 	(focus elegirmejor)
 )
+
 
 ;;;;;;MODULO 4: ELEGIR LAS INSTANCIAS MAS SOBRESALIENTES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule elegirmejor
