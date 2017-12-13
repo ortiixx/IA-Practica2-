@@ -624,13 +624,14 @@
 	(printout t "----------- EN ALQUILERES -----------" crlf)
 	(printout t "[By Marco Terral, Alberta Longhini y Albert Ortiz]" crlf)
 	(printout t crlf)
+	(assert (cliente))
 	(focus preguntas)
 )
 ;;;; MODULO 1:PREGUNTAS AL CLIENTE;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule preguntas (import MAIN ?ALL) (export ?ALL)  )
 
 (defrule tipocliente "regla para definir tipo del cliente"
-	(initial-fact)
+	(cliente)
 	=> 
 	(printout t "Seria solo usted o bien con su pareja, familia tal vez? " crlf)
 	(printout t "1: Yo solo " crlf)	  	
@@ -645,9 +646,18 @@
 		(case 3 then  (assert (tc 4)))
 		(case 4 then  (assert (tc 5))) 
 	)
-        (assert (cliente))
-        (focus filtrado)
 )
+
+(defrule finPreguntas "En esta regla terminamos de hacer preguntas y pasamos a eliminar instancias"
+	(cliente)
+	=>
+	(printout t crlf) 
+	(printout t "---------- Fin del modulo de preguntas. ----------" crlf)
+	(printout t crlf) 
+	(focus filtrado)
+)
+
+
 
 ;;;;;MODULO 2: ESCOGER INSTANCIAS SEGUN  RESTRICCIONES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -668,16 +678,38 @@
 		(send ?inst put-recomendacion (instance-address (nth$ ?i ?allViv)))
 	)
         (printout t "Considerando casas posibles ..." crlf)
-	(focus descartepeor)
 
 )
 
 (defrule descartandoPorNumDormitoriosPareja"regla para descartar casas que no tengan el num. dormitorios requerido para pareja"
-	?posViv  <- (object (is-a Vivienda) (numDormitorio ?numDorm))
+	?posViv  <- (object (is-a Vivienda) (numDormitorio ?numDorm)(Camara $?habitaciones))
 	?pareja <- (object (is-a Pareja) (EsperandoHijos ?bespHij)) 
 	(if (?bespHij) then (bind ?n 2) else (bind ?n 1))
+	(test or(< ?numDorm ?n))
+
+	=>
+	(assert (DescartadaNumDorm ?posViv))
+	(printout t " Eliminada por tener un numero de dormitorios inferior al requerido." (instance-name ?posViv) crlf)	
+	(send ?posViv delete)
+)
+
+(defrule descartandoPorNumDormitoriosColectivo"regla para descartar casas que no tengan el num. dormitorios requerido para colectivo"
+	?posViv  <- (object (is-a Vivienda) (numDormitorio ?numDorm))
+	?colect <- (object (is-a Colectivo) (NumIntegrantes ?nInt)) 
+	(test (< ?numDorm ?nInt))
+	=>
+	(assert (DescartadaNumDorm ?posViv))
+	(printout t " Eliminada por tener un numero de dormitorios inferior al requerido." (instance-name ?posViv) crlf)	
+	(send ?posViv delete)
+)
+
+(defrule descartandoPorNumDormitoriosFamilia"regla para descartar casas que no tengan el num. dormitorios requerido para familia"
+	?posViv  <- (object (is-a Vivienda) (numDormitorio ?numDorm))
+	?familia <- (object (is-a Familia) (NumAncianos ?numAnc) (TFamilia ?Tfam) (NumHijos ?numH)) 
+	(bind ?n +(?numAnc ?numH))
+	(if (eq ?Tfam Monoparental) then (bind ?n +(?n 1)) else (bind ?n +(?n 2)))
 	(test (< ?numDorm ?n))
-	(test )
+	;FALTA CHECKEAR QUE NO HAY UN DORMITORIO DOBLE PARA LA PAREJA 
 	=>
 	(assert (DescartadaNumDorm ?posViv))
 	(printout t " Eliminada por tener un numero de dormitorios inferior al requerido." (instance-name ?posViv) crlf)	
@@ -702,6 +734,15 @@
 	(assert (DescartadaPresmax ?posViv))
 	(printout t " Eliminada por tener un precio superior al presupuesto del cliente. " (instance-name ?posViv) crlf)	
 	(send ?posViv delete)
+)
+
+(defrule finRestricciones "En esta regla finalizamos el proceso de eliminacion de instancias y pasamos al siguiente modulo"
+	(cliente)
+	=>
+	(printout t crlf) 
+	(printout t "---------- Fin del modulo de restricciones. ----------" crlf)
+	(printout t crlf) 
+	(focus descartepeor)
 )
 
 ;;;;;;MODULO 3: DESCARTE SEGUN PREFERENCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -772,6 +813,15 @@
 	(send ?posRecm delete)
 )
 
+(defrule finDescPref "En esta regla finalizamos el proceso de puntuacion de instancias y pasamos al siguiente modulo"
+	(cliente)
+	=>
+	(printout t crlf) 
+	(printout t "---------- Fin del modulo de de preferencias. ----------" crlf)
+	(printout t crlf) 
+	(focus elegirmejor)
+)
+
 ;;;;;;MODULO 4: ELEGIR LAS INSTANCIAS MAS SOBRESALIENTES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule elegirmejor
 	(import MAIN ?ALL)  
@@ -779,6 +829,15 @@
 	(import descartepeor ?ALL)
 	(import preguntas ?ALL)
 	(export ?ALL)
+)
+
+(defrule finInstSobr "En esta regla finalizamos el proceso de seleccion de instancias sobresalientes y pasamos al siguiente modulo. "
+	(cliente)
+	=>
+	(printout t crlf) 
+	(printout t "---------- Fin del modulo seleccionador de instancias sobresalientes. ----------" crlf)
+	(printout t crlf) 
+	(focus escribir)
 )
 
 
