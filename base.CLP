@@ -3,7 +3,7 @@
 	(is-a USER)
 	(role abstract)
 	(single-slot Planta
-;+		(comment "Palabras permitidas:\n- Ătico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
+;+		(comment "Palabras permitidas:\n- Ä‚Âtico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
 		(type STRING)
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
@@ -31,7 +31,7 @@
 ;+		(cardinality 0 1)
 		(create-accessor read-write))
 	(multislot Medio
-;+		(comment "De momento esto lo tratamos como una restricciĂłn, pero deberiaos tratarlo tambien como preferencia.")
+;+		(comment "De momento esto lo tratamos como una restricciÄ‚Ĺ‚n, pero deberiaos tratarlo tambien como preferencia.")
 		(type STRING)
 		(create-accessor read-write))
 	(multislot Especificacion
@@ -275,7 +275,7 @@
 ;+		(cardinality 1 1)
 		(create-accessor read-write))
 	(single-slot Planta
-;+		(comment "Palabras permitidas:\n- Ătico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
+;+		(comment "Palabras permitidas:\n- Ä‚Âtico\n- Entresuelo\n- Numeral  ( Primero, segundo ...)")
 		(type STRING)
 ;+		(cardinality 1 1)
 		(create-accessor read-write)))
@@ -663,7 +663,7 @@
 	(bind $?allViv (find-all-instances((?inst Vivienda)) TRUE))
 	(loop-for-count (?i 1 (length$ ?allViv)) do
 		(bind ?viv (nth$ ?i ?allViv)) 
- 		(bind ?nR (str-cat "Propuesta de casa n�" ?i))
+ 		(bind ?nR (str-cat "Propuesta de casa nş" ?i))
 		(bind ?inst (make-instance ?nR of Recomendacion(grado recomendable)))
 		(send ?inst put-recomendacion (instance-address (nth$ ?i ?allViv)))
 	)
@@ -672,40 +672,37 @@
 
 )
 
+(defrule descartandoPorNumDormitoriosPareja"regla para descartar casas que no tengan el num. dormitorios requerido para pareja"
+	?posViv  <- (object (is-a Vivienda) (numDormitorio ?numDorm))
+	?pareja <- (object (is-a Pareja) (EsperandoHijos ?bespHij)) 
+	(if (?bespHij) then (bind ?n 2) else (bind ?n 1))
+	(test (< ?numDorm ?n))
+	(test )
+	=>
+	(assert (DescartadaNumDorm ?posViv))
+	(printout t " Eliminada por tener un numero de dormitorios inferior al requerido." (instance-name ?posViv) crlf)	
+	(send ?posViv delete)
+)
 
+(defrule descartandoPorPresupuestoMin "regla para descartar casas que tengan un presupuesto minimo al inferior"
+	?posViv  <- (object (is-a Vivienda) (Precio ?precioViv))
+	?client <- (object (is-a Cliente) (PrecioMinimo ?precMin))
+	(test (< ?precioViv ?precMin))  
+	=>
+	(assert (DescartadaPresmin ?posViv))
+	(printout t " Eliminada por tener un precio inferior al minimo aceptable. " (instance-name ?posViv) crlf)	
+	(send ?posViv delete)
+)
 
-;(defrule descartandoPorNumDormitorios"regla para descartar casas que no tengan el num. dormitorios requerido"
-;	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
-;	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
-;	(Cuatrimestre ?Q)
-;	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
-;	=>
-;	(assert (DescartadaQuatri ?posRecm))
-;	(printout t " Eliminada por tener un numero de dormitorios inferior." (instance-name ?posRecm) crlf)	
-;	(send ?posRecm delete)
-;)
-
-;(defrule descartandoPorPresupuestoMin "regla para descartar casas que tengan un presupuesto minimo al inferior"
-;	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
-;	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
-;	(Cuatrimestre ?Q)
-;	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
-;	=>
-;	(assert (DescartadaQuatri ?posRecm))
-;	(printout t " Eliminada por tener un presupuesto inferior al minimo. " (instance-name ?posRecm) crlf)	
-;	(send ?posRecm delete)
-;)
-
-;(defrule descartandoPorPresupuestoMax "regla para descartar casas que tengan un presupuesto superior al maximo"
-;	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec))
-;	?asig <- (object (is-a AsignaturaFIB) (cuatrimestre $?cuatris))
-;	(Cuatrimestre ?Q)
-;	(test (and (eq ?asig ?asigRec)(not(member ?Q ?cuatris))))   
-;	=>
-;	(assert (DescartadaQuatri ?posRecm))
-;	(printout t " Eliminada por exceder el presupuesto maximo." (instance-name ?posRecm) crlf)	
-;	(send ?posRecm delete)
-;)
+(defrule descartandoPorPresupuestoMax "regla para descartar casas que tengan un presupuesto superior al maximo"
+	?posViv  <- (object (is-a Vivienda) (Precio ?precioViv))
+	?client <- (object (is-a Cliente) (Presupuesto ?presCli))
+	(test (> ?precioViv ?presCli))  
+	=>
+	(assert (DescartadaPresmax ?posViv))
+	(printout t " Eliminada por tener un precio superior al presupuesto del cliente. " (instance-name ?posViv) crlf)	
+	(send ?posViv delete)
+)
 
 ;;;;;;MODULO 3: DESCARTE SEGUN PREFERENCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule descartepeor
@@ -714,6 +711,7 @@
 	(import preguntas ?ALL) 
 	(export ?ALL)
 )
+
 (defrule restamobilidadpub "Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga ningun transporte publico cerca"
 	?mob <-(object (is-a NMobilidad)(Transporte ?tp))
 	(test (neq Coche ?tp))
@@ -729,6 +727,7 @@
 		);definir una funcion que busque si hay o no transporte cerca o medio de una vivienda
 	)
 )
+
 (defrule restamobilidadcoche "Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga un garage"
 	?mob <-(object (is-a NMobilidad)(Transporte ?tp))
 	(test (eq Coche ?tp))
@@ -746,6 +745,7 @@
 		);definir una funcion que busque si hay o no transporte cerca o medio de una vivienda
 	)
 )
+
 (defrule restadistanciacerca"Sumamos un uno y pasa a ser poco recomendable cualquier instancia que no tenga cerca lo indicado"
 	?mob <-(object (is-a NDistancia)(TServicio ?ts)(TDistancia ?td))
 	(test (eq Cerca ?td))
@@ -763,6 +763,7 @@
 		);definir una funcion que busque si hay o no transporte cerca o medio de una vivienda
 	)
 )
+
 (defrule elimina3 "Eliminamos la casa que no cumpla con mas de tres preferencias"
 	?posRecm  <- (object (is-a Recomendacion) (recomendacion ?asigRec)(numFallo ?g))
 	(test(> 3 ?g))
@@ -770,6 +771,7 @@
 	(printout t " Eliminada por exceder el numero de preferencias no cumplidas." (instance-name ?posRecm) crlf)	
 	(send ?posRecm delete)
 )
+
 ;;;;;;MODULO 4: ELEGIR LAS INSTANCIAS MAS SOBRESALIENTES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule elegirmejor
 	(import MAIN ?ALL)  
