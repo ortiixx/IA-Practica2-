@@ -614,6 +614,17 @@
 (deffunction pregunta-int (?pregunta))
 
 ;;;MESSAGE HANDLER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmessage-handler Vivienda imprime primary()
+)
+
+(defmessage-handler Recomendacion imprime primary()
+	(printout t "Nivel de recomendacion: ")
+	if(eq(?self:grado Excelente) then (printout t "Excelente"))
+)
+
+
+
 ;;;MAIN;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule MAIN (export ?ALL))
 (defrule comienzo "inicio"
@@ -736,6 +747,18 @@
 	(send ?posViv delete)
 )
 
+(defrule descartandoRAlquilerMueble "regla para descartar casas segun restricciones relacionadas con los electrodomesticos del alquiler"
+	?rAlq <- (object(is-a RAlquiler)(Electrodomestico $?electd))
+	?posViv <- (object (is-a Vivienda)(CarAlquiler ?alqV))
+	(bind ?b false)
+	(loop-for-count (?i 1 (length$ ?electd)) do
+		(bind ?eleq (nth$ ?i ?electd))
+		(send $?muebles get-Mueble)
+		(if (exists (eleq)))
+	)
+	test(b)
+)
+
 
 (defrule finRestricciones "En esta regla finalizamos el proceso de eliminacion de instancias y pasamos al siguiente modulo"
 	(cliente)
@@ -746,6 +769,7 @@
 	(focus descartepeor)
 
 ;;;;;;MODULO 3: DESCARTE SEGUN PREFERENCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defmodule descartepeor
 	(import MAIN ?ALL)  
 	(import filtrado ?ALL)
@@ -854,19 +878,32 @@
 )
 
 (defrule obtenerRecomendaciones "regla para obtener todas las recomendaciones generadas"
-
-=>
-(assert(FIN))
+(bind ?pos 1)
+	(bind $?recomendaciones (find-all-instances ((?inst Recomendacion)) TRUE))
+	(printout t crlf)
+	(printout t "Todas las posibles recomendaciones: " crlf)
+	(printout t "----------------------------------- " crlf)
+	(progn$ (?i ?recomendaciones)
+		(assert (solucionOrdenada (posicion ?pos) (recomendacion ?i)))	
+		(bind ?grado (send ?i get-gradoRecomendacion))
+		(printout t " "(instance-name ?i) " " ?grado crlf)
+		(bind ?pos (+ ?pos 1))		
+	)  
+	(if(> ?pos 1) then (assert (PrimeraPos 1)) (assert (numeroR (- ?pos 1))) (assert(MaxGradoRec 0)))
+	(printout t crlf)
+	(printout t "------------------------  ASIGNATURAS RECOMENDADAS -----------------------" crlf)
+	(printout t crlf)
 )
 
 (defrule ordenarRecomendaciones "regla para ordenar las recomendaciones"
-
+(not (FIN))
+(cliente)
 =>
-(assert(FIN))
+
 )
 
 (defrule sinRecomendaciones "regla para mostrar la ausencia de recomendaciones generadas"
-
+(cliente)
 =>
 (assert(FIN))
 )
