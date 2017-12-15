@@ -747,16 +747,74 @@
 	(send ?posViv delete)
 )
 
-(defrule descartandoRAlquilerMueble "regla para descartar casas segun restricciones relacionadas con los electrodomesticos del alquiler"
-	?rAlq <- (object(is-a RAlquiler)(Electrodomestico $?electd))
-	?posViv <- (object (is-a Vivienda)(CarAlquiler ?alqV))
+;;Restricciones alquiler
+
+(defrule descartandoRAlquilerElectrodomestico "regla para descartar casas segun restricciones relacionadas con los electrodomesticos del alquiler"
+	(object(is-a RAlquiler)(Alquiler $?Ralq))
+	?posViv <- (object (is-a Vivienda)(CarAlquiler ?carAlq))
 	(bind ?b false)
+	(bind $?electd (send $?Ralq get-Electrodomestico))
+	(bind $?electro (send $?carAlq get-Electrodomestico))
 	(loop-for-count (?i 1 (length$ ?electd)) do
 		(bind ?eleq (nth$ ?i ?electd))
-		(send $?muebles get-Mueble)
-		(if (exists (eleq)))
+		(if (eq (member$ ?eleq $?electro) FALSE) then (bind ?b true) )
 	)
 	test(b)
+	=>
+	(assert (DescartadaElectAlq ?posViv))
+	(printout t " Eliminada por no tener alguno de los electrodomesticos requeridos por el cliente. " (instance-name ?posViv) crlf)
+	(send ?posViv delete)
+)
+
+(defrule descartandoRAlquilerMueble "regla para descartar casas segun restricciones relacionadas con los muebles del alquiler"
+	(object(is-a RAlquiler)(Alquiler $?Ralq))
+	?posViv <- (object (is-a Vivienda)(CarAlquiler ?carAlq))
+	(bind ?b false)
+	(bind $?electd (send $?Ralq get-Mueble))
+	(bind $?electro (send $?carAlq get-Mueble))
+	(loop-for-count (?i 1 (length$ ?electd)) do
+		(bind ?eleq (nth$ ?i ?electd))
+		(if (eq (member$ ?eleq $?electro) FALSE) then (bind ?b true) )
+	)
+	test(b)
+	=>
+	(assert (DescartadaMuebleAlq ?posViv))
+	(printout t " Eliminada por no tener alguno de los muebles requeridos por el cliente. " (instance-name ?posViv) crlf)
+	(send ?posViv delete)
+)
+
+(defrule descartandoRAlquilerProhibicionBuscar "regla para descartar casas segun restricciones relacionadas con las normas del alquiler que queremos buscar"
+	(object(is-a RAlquiler)(Alquiler $?Ralq))
+	?posViv <- (object (is-a Vivienda)(CarAlquiler ?carAlq))
+	(bind ?b false)
+	(bind $?electd (send $?Ralq get-Prohibido))
+	(bind $?electro (send $?carAlq get-ProhibicionBuscar))
+	(loop-for-count (?i 1 (length$ ?electd)) do
+		(bind ?eleq (nth$ ?i ?electd))
+		(if (eq (member$ ?eleq $?electro) FALSE) then (bind ?b true) )
+	)
+	test(b)
+	=>
+	(assert (DescartadaProhibicionBusc ?posViv))
+	(printout t " Eliminada por no tener alguna de las prohibiciones requeridas por el cliente. " (instance-name ?posViv) crlf)
+	(send ?posViv delete)
+)
+
+(defrule descartandoRAlquilerProhibicionEvitar "regla para descartar casas segun restricciones relacionadas con las normas del alquiler que queremos evitar"
+	(object(is-a RAlquiler)(Alquiler $?Ralq))
+	?posViv <- (object (is-a Vivienda)(CarAlquiler ?carAlq))
+	(bind ?b false)
+	(bind $?electd (send $?Ralq get-Prohibido))
+	(bind $?electro (send $?carAlq get-ProhibicionBuscar))
+	(loop-for-count (?i 1 (length$ ?electd)) do
+		(bind ?eleq (nth$ ?i ?electd))
+		(if not (eq (member$ ?eleq $?electro) FALSE) then (bind ?b true) )
+	)
+	test(b)
+	=>
+	(assert (DescartadaProhibicionEvit ?posViv))
+	(printout t " Eliminada por tener alguna de las prohibiciones requeridas por el cliente. " (instance-name ?posViv) crlf)
+	(send ?posViv delete)
 )
 
 
