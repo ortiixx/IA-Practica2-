@@ -605,13 +605,31 @@
 ;;;;;;INSTANCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;FUNCIONES AUXILIARES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;; Funcion para hacer una pregunta general 
+(deffunction pregunta-general (?pregunta) 
+	(format t "%s" ?pregunta) 
+	(bind ?respuesta (read)) 
+	?respuesta
+)
+
+;;; Funcion para hacer una pregunta con respuesta en un rango dado
+(deffunction pregunta-numerica (?pregunta ?rangini ?rangfi) 
+	(format t "%s [%d, %d] " ?pregunta ?rangini ?rangfi) 
+	(bind ?respuesta (read)) 
+	(while (not(and(>= ?respuesta ?rangini)(<= ?respuesta ?rangfi))) do 
+		(format t "¿%s? [%d, %d] " ?pregunta ?rangini ?rangfi) 
+		(bind ?respuesta (read)) 
+	) 
+	?respuesta
+)
+
+;;; Funcion para hacer una pregunta con un conjunto definido de valores de repuesta    
 (deffunction pregunta-lista (?pregunta $?valores_posibles) 
 	(format t "%s" ?pregunta)  
 	(bind ?resposta (readline))  
 	(bind ?res (str-explode ?resposta))   
 	?res
 )
-(deffunction pregunta-int (?pregunta))
 
 ;;;MESSAGE HANDLER;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -624,8 +642,81 @@
 )
 
 
+;;;;;;DEFTEMPLATES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;MAIN;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; UNDEFINED para SYMBOL indefinido -1 para entero no definido
+
+(deftemplate perfilCliente "deftemplate para modelar a un cliente"
+	(slot tipo
+		(allowed-values Individual Colectivo Familia Pareja UNDEFINED)
+		(type SYMBOL)
+	 	(default UNDEFINED))
+	(slot presupuestoFijo
+		(type SYMBOL)
+		(allowed-values TRUE FALSE UNDEFINED)
+		(default UNDEFINED)
+	)
+	(slot presupuesto
+		(type INTEGER)
+		(default -1)
+	)
+	(slot presupuestoMinimo
+		(type INTEGER)
+		(default -1)
+	)
+
+	(multislot edades 
+		(type INTEGER)
+	)
+
+	;para saber si hay niños
+	(slot nino 
+		(type SYMBOL)
+		(allowed-values TRUE FALSE UNDEFINED)
+		(default UNDEFINED)
+	)
+	;para saber si hay ancianos
+	(slot anciano 
+		(type SYMBOL)
+		(allowed-values TRUE FALSE UNDEFINED)
+		(default UNDEFINED)
+	)
+)
+
+(deftemplate perfilFamilia "deftemplate para modelar caracteristicas especificas de una familia"
+	(slot numAnciano
+		(type INTEGER)
+		(default -1)
+	)
+	(slot numHijo
+		(type INTEGER)
+		(default -1)
+	)
+	(slot monoparental
+		(type SYMBOL)
+		(allowed-values TRUE FALSE UNDEFINED)
+		(default UNDEFINED)
+	)
+
+)
+
+(deftemplate perfilColectivo "deftemplate para modelar caracteristicas especificas de un colectivo"
+	(slot numIntegrante
+		(type INTEGER)
+		(default -1)
+	)
+)
+
+(deftemplate perfilPareja "deftemplate para modelar caracteristicas especificas de una pareja"
+	(slot esperandoHijo
+		(type SYMBOL)
+		(allowed-values TRUE FALSE UNDEFINED)
+		(default UNDEFINED)
+	)
+)
+
+;;;MAIN;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defmodule MAIN (export ?ALL))
 (defrule comienzo "inicio"
 	(initial-fact)
@@ -636,29 +727,134 @@
 	(printout t "[By Marco Terral, Alberta Longhini y Albert Ortiz]" crlf)
 	(printout t crlf)
 	(assert (cliente))
+	(assert (perfilCliente))
 	(focus preguntas)
 )
-;;;; MODULO 1:PREGUNTAS AL CLIENTE;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;MODULO 1: PREGUNTAS AL CLIENTE;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defmodule preguntas (import MAIN ?ALL) (export ?ALL)  )
+
+;;PREGUNTAS BÁSICAS 
 
 (defrule tipocliente "regla para definir tipo del cliente"
 	(cliente)
+	?pc<-(perfilCliente (tipo UNDEFINED))
 	=> 
 	(printout t "Seria solo usted o bien con su pareja, familia tal vez? " crlf)
-	(printout t "1: Yo solo " crlf)	  	
-	(printout t "2: Seriamos una pareja " crlf)
-	(printout t "3: Somos una familia" crlf)
-	(printout t "4: Somos un grupo de personas" crlf)
-	(bind ?tc (pregunta-lista "Elija una opcion"))
+	(printout t "1: Yo solo." crlf)	  	
+	(printout t "2: Somos una pareja." crlf)
+	(printout t "3: Somos una familia." crlf)
+	(printout t "4: Ninguna de las anteriores respuestas." crlf) ;Colectivo
+	(bind ?tc (pregunta-numerica "Elija una opcion " 1 4))
 
 	(switch ?tc
-		(case 1 then  (assert (tc 1)))
-		(case 2 then  (assert (tc 2)))
-		(case 3 then  (assert (tc 4)))
-		(case 4 then  (assert (tc 5))) 
+		(case 1 then  (modify ?pc (tipo Individual)) )
+		(case 2 then  (modify ?pc (tipo Pareja)) (assert (perfilPareja)) )
+		(case 3 then  (modify ?pc (tipo Familia)) (assert (perfilFamilia)))
+		(case 4 then  (modify ?pc (tipo Colectivo)) (assert (perfilColectivo)) )
 	)
+	(printout t crlf)
 )
 
+(defrule presupuestoCliente "regla para definir presupuesto del cliente"
+	(cliente)
+	?pc<-(perfilCliente (presupuesto -1))
+	=> 
+	(printout t "Tiene un presupuesto maximo en mente? s/n" crlf)
+	(bind ?tc (pregunta-general "Elija una opcion "))
+	(if (eq s ?tc) then (bind ?b TRUE) else (bind ?b FALSE) (modify ?pc (presupuesto 0) ) )
+	(if (eq ?b TRUE) then (modify ?pc (presupuesto (pregunta-general "Inserte un presupuesto: ")) ))
+	(printout t crlf)
+)
+
+(defrule presupuestoMinimoCliente "regla para definir presupuesto minimo del cliente"
+	(cliente)
+	?pc<-(perfilCliente (presupuestoMinimo -1))
+	=> 
+	(printout t "Tiene un precio minimo pensado? s/n" crlf)
+	(bind ?tc (pregunta-general "Elija una opcion "))
+	(if (eq s ?tc) then (bind ?b TRUE) else (bind ?b FALSE) (modify ?pc (presupuestoMinimo 0) ) )
+	(if (eq ?b TRUE) then (modify ?pc (presupuestoMinimo (pregunta-general "Inserte un presupuesto minimo: ")) ))
+	(printout t crlf)
+)
+
+(defrule presupuestoClienteNegociable "regla para definir si presupuesto cliente fijo"
+	(cliente)
+	?pc<-(perfilCliente (presupuesto ?p) (presupuestoFijo UNDEFINED))
+	(test (> ?p 0))
+	=>
+	(printout t "El presupuesto maximo que usted ha especificado, podria ser negociado? s/n" crlf)
+	(bind ?tc (pregunta-general "Elija una opcion "))
+	(if (eq s ?tc) then (modify ?pc (presupuestoFijo TRUE) ) else (modify ?pc (presupuestoFijo FALSE) ) )
+	(printout t crlf)
+)
+
+;PREGUNTAS PAREJA
+
+(defrule esperandohParejaCliente "regla para definir si la pareja de clientes espera hijos"
+	(cliente)
+	?pc<-(perfilCliente (tipo Pareja)(nino UNDEFINED))
+	?pp<-(perfilPareja(esperandoHijo UNDEFINED))
+	=>
+	(printout t "Tendran hijos en un futuro? s/n" crlf)
+	(bind ?tc (pregunta-general "Elija una opcion "))
+	(if (eq s ?tc) then (modify ?pc (nino TRUE)) (modify ?pp (esperandoHijo TRUE))  else (modify ?pc (nino FALSE) )  (modify ?pp (esperandoHijo FALSE)) )
+	(printout t crlf)
+)
+
+;PREGUNTAS FAMILIA
+
+(defrule hijosFamiliaCliente "regla para definir si hay hijos en la familia"
+	(cliente)
+	?pf<-(perfilFamilia (numHijo -1))
+	?pc<-(perfilCliente (nino UNDEFINED))
+	=> 
+	(printout t "Tienen hijos? s/n" crlf)
+	(bind ?tc (pregunta-general "Elija una opcion "))
+	(if (eq s ?tc) then (bind ?b TRUE) else (bind ?b FALSE) )
+	(if (eq ?b TRUE) then (modify ?pf (numHijo (pregunta-general "Introduzca el numero de hijos: ")) ) )
+	(printout t crlf)
+)
+
+(defrule ancianosFamiliaCliente "regla para definir si hay ancianos en la familia"
+	(cliente)
+	?pf<-(perfilFamilia (numAnciano -1))
+	?pc<-(perfilCliente (anciano UNDEFINED))
+	=> 
+	(printout t "Vivira con ustedes algun anciano? s/n" crlf)
+	(bind ?tc (pregunta-general "Elija una opcion "))
+	(if (eq s ?tc) then (bind ?b TRUE) else (bind ?b FALSE) (modify ?pc (anciano FALSE) ) )
+	(if (eq ?b TRUE) then (modify ?pf (numAnciano (pregunta-general "Introduzca el numero de ancianos: "))) (modify ?pc (anciano TRUE)) )
+	(printout t crlf)
+)
+
+(defrule monoparentalFamiliaCliente "regla para definir si se trata de una familia monoparental"
+	(cliente)
+	?pf<-(perfilFamilia (monoparental UNDEFINED))
+	=>
+	(printout t "Se trata de una familia monoparental? s/n" crlf)
+	(bind ?tc (pregunta-general "Elija una opcion "))
+	(if (eq s ?tc) then (modify ?pf (monoparental TRUE) ) else (modify ?pf (monoparental FALSE) ) )
+	(printout t crlf)
+)
+
+;PREGUNTAS COLECTIVO
+
+(defrule integranteColectivoCliente "regla para definir cuantas personas formaran el colectivo"
+	(cliente)
+	?pf<-(perfilColectivo (numIntegrante -1))
+	=> 
+	(printout t "Cuantas personas seran? s/n" crlf)
+	(modify ?pf (numIntegrante (pregunta-general "Introduzca el numero de personas: ")) )
+	(printout t crlf)
+)
+
+;Y CON ESTO LLEGAMOS A NUESTRAS AMADAS RESTRICCIONES 
 (defrule finPreguntas "En esta regla terminamos de hacer preguntas y pasamos a eliminar instancias"
 	(cliente)
 	=>
@@ -670,7 +866,10 @@
 
 
 
-;;;;;MODULO 2: ESCOGER INSTANCIAS SEGUN  RESTRICCIONES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;MODULO 2: ESCOJER INSTANCIAS SEGUN RESTRICCIONES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmodule filtrado
 	(import MAIN ?ALL) 
@@ -826,7 +1025,12 @@
 	(printout t crlf) 
 	(focus descartepeor)
 
-;;;;;;MODULO 3: DESCARTE SEGUN PREFERENCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;MODULO 3: DESCARTE SEGUN PREFERENCIAS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmodule descartepeor
 	(import MAIN ?ALL)  
@@ -906,7 +1110,11 @@
 )
 
 
-;;;;;;MODULO 4: ELEGIR LAS INSTANCIAS MAS SOBRESALIENTES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;MODULO 4: ELEGIR INSTANCIAS SOBRESALIENTES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defmodule elegirmejor
 	(import MAIN ?ALL)  
 	(import filtrado ?ALL)
@@ -925,7 +1133,9 @@
 )
 
 
-;;;;;;MODULO 5: MOSTRAR INSTANCIAS AL USUARIO;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;MODULO 5: MOSTRAR INSTANCIAS AL USUARIO;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule escribir
 	(import MAIN ?ALL)  
 	(import filtrado ?ALL)
