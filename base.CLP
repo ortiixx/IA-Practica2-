@@ -697,7 +697,6 @@
 		(allowed-values TRUE FALSE UNDEFINED)
 		(default UNDEFINED)
 	)
-
 )
 
 (deftemplate perfilColectivo "deftemplate para modelar caracteristicas especificas de un colectivo"
@@ -712,6 +711,90 @@
 		(type SYMBOL)
 		(allowed-values TRUE FALSE UNDEFINED)
 		(default UNDEFINED)
+	)
+)
+
+(deftemplate restricciones
+	(multislot intereses
+		(type SYMBOL)
+		(allowed-values Alquiler Caracteristicas Situacion)
+	)
+)
+
+(deftemplate necesidadesAlquiler
+	(multislot prohibidoBuscarPreferible
+		(type SYMBOL)
+		(allowed-values Mascota Fumar Invitado Mueble Obra ConductaInapropiada)
+	)
+	(multislot prohibidoEvitarPreferible
+		(type SYMBOL)
+		(allowed-values Mascota Fumar Invitado Mueble Obra ConductaInapropiada)
+	)
+	(multislot prohibidoBuscarIndispensable
+		(type SYMBOL)
+		(allowed-values Mascota Fumar Invitado Mueble Obra ConductaInapropiada)
+	)
+	(multislot prohibidoEvitarIndispensable
+		(type SYMBOL)
+		(allowed-values Mascota Fumar Invitado Mueble Obra ConductaInapropiada)
+	)
+	(multislot electrodomestico
+		(type SYMBOL)
+		(allowed-values indispensableSi preferibleSi indispensableNo preferibleNo UNDEFINED)
+		(default UNDEFINED)
+	)
+	(slot amueblado
+		(type SYMBOL)
+		(allowed-values indispensableSi preferibleSi indispensableNo preferibleNo UNDEFINED)
+		(default UNDEFINED)
+	)
+)
+
+(deftemplate necesidadesDomicilio
+	(slot tipoDomicilioRestriccion
+		(type SYMBOL)
+		(allowed-values Piso Duplex Triplex Aislada Pareada Adosada Unifamiliar Apartamento  UNDEFINED)
+		(default UNDEFINED)
+	)
+	(slot tipoDomicilioPreferencia
+		(type SYMBOL)
+		(allowed-values Piso Duplex Triplex Aislada Pareada Adosada Unifamiliar Apartamento  UNDEFINED)
+		(default UNDEFINED)
+	)
+)
+
+(deftemplate necesidadesLocalizacion
+	(slot barrioRestriccion
+		(type STRING)
+		(default "UNDEFINED")
+	)
+	(slot barrioPreferencia
+		(type STRING)
+		(default "UNDEFINED")
+	)
+	(multislot cercaRestriccion
+		(type SYMBOL)
+		(allowed-values Transporte Educacion Sanidad Ocio Hosteleria Comercio)
+	)
+	(multislot cercaPreferible
+		(type SYMBOL)
+		(allowed-values Transporte Educacion Sanidad Ocio Hosteleria Comercio)
+	)
+	(multislot medioPreferible
+		(type SYMBOL)
+		(allowed-values Transporte Educacion Sanidad Ocio Hosteleria Comercio)
+	)
+	(multislot medioRestriccion
+		(type SYMBOL)
+		(allowed-values Transporte Educacion Sanidad Ocio Hosteleria Comercio)
+	)
+	(multislot lejosPreferible
+		(type SYMBOL)
+		(allowed-values Transporte Educacion Sanidad Ocio Hosteleria Comercio)
+	)
+	(multislot lejosRestriccion
+		(type SYMBOL)
+		(allowed-values Transporte Educacion Sanidad Ocio Hosteleria Comercio)
 	)
 )
 
@@ -769,6 +852,15 @@
 	(bind ?tc (pregunta-general "Elija una opcion "))
 	(if (eq s ?tc) then (bind ?b TRUE) else (bind ?b FALSE) (modify ?pc (presupuesto 0) ) )
 	(if (eq ?b TRUE) then (modify ?pc (presupuesto (pregunta-general "Inserte un presupuesto: ")) ))
+	(printout t crlf)
+)
+
+(defrule edadCliente "regla para definir edad integrantes"
+	(cliente)
+	?pc<-(perfilCliente (edad -1))
+	=> 
+	(bind $?tc (pregunta-lista "Introduzca la edad aproximada de los individuos, inserte un espacio entre edades y pulse Intro al finalizar."))
+	(modify ?pc (edad ?tc))
 	(printout t crlf)
 )
 
@@ -849,20 +941,347 @@
 	(cliente)
 	?pf<-(perfilColectivo (numIntegrante -1))
 	=> 
-	(printout t "Cuantas personas seran? s/n" crlf)
+	(printout t "Cuantas personas seran?" crlf)
 	(modify ?pf (numIntegrante (pregunta-general "Introduzca el numero de personas: ")) )
 	(printout t crlf)
 )
 
-;Y CON ESTO LLEGAMOS A NUESTRAS AMADAS RESTRICCIONES 
-(defrule finPreguntas "En esta regla terminamos de hacer preguntas y pasamos a eliminar instancias"
+(defrule tipoRestriccion "regla para definir restricciones de interes"
+	(cliente) 
+	(perfilCliente)
+	=>
+	(printout t "Ahora hablemos de aquellas caracteristicas que le puedan interesar del domicilio." crlf)
+	(printout t "1: Caracteristicas generales del domicilio." crlf)	  	
+	(printout t "2: Localizacion del domicilio." crlf) 
+	(printout t "3: Condiciones del alquiler." crlf)	  	
+	(bind $?tc (pregunta-lista "Introduzca todas las opciones separadas por un espacio. Pulse Intro para finalizar."))
+	(loop-for-count (?i 1 (length$ ?tc)) do
+		(bind ?eleq (nth$ ?i ?tc))
+		(switch ?eleq
+			(case 1 then  (assert (necesidadesAlquiler)) )
+			(case 2 then  (assert (necesidadesLocalizacion)) )
+			(case 3 then  (assert (necesidadesDomicilio)) )
+		)
+	)
+	(printout t crlf)
+
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;RESTRICCIONES Y PREFERENCIAS
+
+;;ALQUILER
+
+(defrule alquilerViviendaAmueblada "regla para definir mobiliario"
+	(cliente)
+	?na<-(necesidadesAlquiler)
+	(not (alquilerViviendaAmueblada))
+	=>
+	(printout t "Respecto al mobiliario del domicilio: " crlf)
+	(printout t "1: Es indispensable que este amueblado." crlf)	  	
+	(printout t "2: Es preferible que este amueblado." crlf)
+	(printout t "3: Es indispensable que no este amueblado." crlf)
+	(printout t "4: Es preferible que no este amueblado." crlf) ;Colectivo
+	(printout t "5: Me resulta indiferente." crlf)
+	(bind ?tc (pregunta-numerica "Elija una opcion " 1 5))
+
+	(switch ?tc
+		(case 1 then (modify ?na (amueblado indispensableSi)) )
+		(case 2 then (modify ?na (amueblado preferibleSi)) )
+		(case 3 then (modify ?na (amueblado indispensableNo)) )
+		(case 4 then (modify ?na (amueblado preferibleNo)) )
+	)
+	(printout t crlf)
+	(assert (alquilerViviendaAmueblada))
+)
+
+(defrule alquilerViviendaElectrodom "regla para definir electrodomesticos"
+	(cliente)
+	?na<-(necesidadesAlquiler)
+	(not (alquilerViviendaElectrodomestico))
+	=>
+	(printout t "Respecto a que la vivienda disponga ya de electrodomesticos: " crlf)
+	(printout t "1: Es indispensable que disponga." crlf)	  	
+	(printout t "2: Es preferible que disponga." crlf)
+	(printout t "3: Es indispensable que no disponga." crlf)
+	(printout t "4: Es preferible que no disponga." crlf) ;Colectivo
+	(printout t "5: Me resulta indiferente." crlf)
+	(bind ?tc (pregunta-numerica "Elija una opcion " 1 5))
+
+	(switch ?tc
+		(case 1 then (modify ?na (electrodomestico indispensableSi)) )
+		(case 2 then (modify ?na (electrodomestico preferibleSi)) )
+		(case 3 then (modify ?na (electrodomestico indispensableNo)) )
+		(case 4 then (modify ?na (electrodomestico preferibleNo)) )
+	)
+	(printout t crlf)
+	(assert (alquilerViviendaElectrodomestico))
+)
+
+(defrule tipoRestriccionEvitar "regla para definir normas a evitar"
+	(cliente) 
+	?na<-(necesidadesAlquiler)
+	(not (alquilerViviendaNormas))
+	=>
+	(printout t "Cuales de las siguientes prohibiciones generales quiere evitar a toda costa?" crlf)
+	(printout t "1: Fumar." crlf)	  	
+	(printout t "2: Traer mascotas." crlf) 
+	(printout t "3: Traer invitados." crlf)	  	
+	(printout t "4: Traer muebles propios." crlf)	
+	(printout t "5: Hacer ruido." crlf)	 
+	(printout t "6: Hacer obras." crlf)	  
+	(bind $?tc (pregunta-lista "Introduzca todas las opciones separadas por un espacio. Pulse Intro para finalizar."))
+	(modify ?na (prohibidoEvitarIndispensable $?tc))
+	(assert (alquilerViviendaNormas))
+	(printout t crlf)
+	(printout t "Cuales de las anteriores prohibiciones generales querria evitar pero no las considera indispensables?" crlf)
+	(bind $?tc (pregunta-lista "Introduzca todas las opciones separadas por un espacio. Pulse Intro para finalizar."))
+	(modify ?na (prohibidoEvitarPreferible $?tc))
+	(printout t crlf)
+)
+
+(defrule tipoRestriccionBuscar "regla para definir normas de interes"
+	(cliente) 
+	?na<-(necesidadesAlquiler)
+	(not (alquilerViviendaNormasBuscar))
+	=>
+	(printout t "Necesita que una de las siguientes prohibiciones venga incluida en el domicilio?" crlf)
+	(printout t "1: Fumar." crlf)	  	
+	(printout t "2: Traer mascotas." crlf) 
+	(printout t "3: Traer invitados." crlf)	  	
+	(printout t "4: Traer muebles propios." crlf)	
+	(printout t "5: Hacer ruido." crlf)	 
+	(printout t "6: Hacer obras." crlf)	  
+	(bind $?tc (pregunta-lista "Introduzca todas las opciones separadas por un espacio. Pulse Intro para finalizar."))
+	(modify ?na (prohibidoBuscarIndispensable $?tc))
+	(assert (alquilerViviendaNormasBuscar))
+	(printout t crlf)
+	(printout t "Cuales de las anteriores prohibiciones generales querria tener en el domicilio pero no las considera indispensables?" crlf)
+	(bind $?tc (pregunta-lista "Introduzca todas las opciones separadas por un espacio. Pulse Intro para finalizar."))
+	(modify ?na (prohibidoBuscarPreferible $?tc))
+	(printout t crlf)
+)
+
+;;;LOCALIZACION
+
+(defrule barrioVivienda "regla para definir el barrio"
+	(cliente)
+	?nL<-(necesidadesLocalizacion)
+	(not(barrioVivienda))
+	=>
+	(printout t "La vivienda tiene que encontrarse especificamente en algun barrio? s/n" crlf)
+	(bind ?tc (pregunta-general "Elija una opcion "))
+	(if (eq s ?tc) then (bind ?b TRUE) else (bind ?b FALSE) )
+		(printout t crlf)
+		(if (eq ?b TRUE) then 
+		(bind ?tc (pregunta-general "Introduzca el nombre del barrio: "))
+		(modify ?nL (barrioRestriccion ?tc))
+	else
+		(printout t "Y existe algun barrio que prefieran mas que el resto? s/n" crlf)
+		(bind ?tc (pregunta-general "Elija una opcion "))
+		(if (eq s ?tc) then (bind ?b TRUE) else (bind ?b FALSE) )
+		(printout t crlf)
+		(if (eq ?b TRUE) then 
+			(bind ?tc (pregunta-general "Introduzca el nombre del barrio: "))
+			(modify ?nL (barrioPreferencia ?tc)))
+	)
+	(assert (barrioVivienda))
+)
+
+(defrule serviciosCercanos "regla para definir servicios cercanos"
+	(cliente) 
+	?nl<-(necesidadesLocalizacion)
+	(not (serviciosCercanos))
+	=>
+	(printout t "Cuales de los siguientes tipos de servicios necesita tener cerca?" crlf)
+	(printout t "1: Transporte." crlf)	  	
+	(printout t "2: Educacion." crlf) 
+	(printout t "3: Sanidad." crlf)	  	
+	(printout t "4: Ocio." crlf)	
+	(printout t "5: Hosteleria." crlf)	 
+	(printout t "6: Comercio." crlf)	  
+	(bind $?tc (pregunta-lista "Introduzca todas las opciones separadas por un espacio. Pulse Intro para finalizar."))
+	(assert (serviciosCercanos))
+	(printout t crlf)
+	(printout t "Cuales de los anteriores servicios le gustaria tener cerca del domicilio?" crlf)
+	(bind $?ts (pregunta-lista "Introduzca todas las opciones separadas por un espacio. Pulse Intro para finalizar."))
+	(modify ?nl (cercaPreferible $?ts)(cercaRestriccion $?tc))
+	(printout t crlf)
+)
+
+(defrule serviciosMedio "regla para definir servicios medio"
+	(cliente) 
+	?nl<-(necesidadesLocalizacion)
+	(not (serviciosMedio))
+	=>
+	(printout t "Cuales de los siguientes tipos de servicios necesita tener a media distancia?" crlf)
+	(printout t "1: Transporte." crlf)	  	
+	(printout t "2: Educacion." crlf) 
+	(printout t "3: Sanidad." crlf)	  	
+	(printout t "4: Ocio." crlf)	
+	(printout t "5: Hosteleria." crlf)	 
+	(printout t "6: Comercio." crlf)	  
+	(bind $?tc (pregunta-lista "Introduzca todas las opciones separadas por un espacio. Pulse Intro para finalizar."))
+	(assert (serviciosMedio))
+	(printout t crlf)
+	(printout t "Cuales de los anteriores servicios le gustaria tener a media distancia del domicilio?" crlf)
+	(bind $?ts (pregunta-lista "Introduzca todas las opciones separadas por un espacio. Pulse Intro para finalizar."))
+	(modify ?nl (medioPreferible $?ts)(medioRestriccion $?tc))
+	(printout t crlf)
+)
+
+(defrule serviciosLejanos "regla para definir servicios lejanos"
+	(cliente) 
+	?nl<-(necesidadesLocalizacion)
+	(not (serviciosLejanos))
+	=>
+	(printout t "Existe alguno de los siguientes tipos de servicios que necesite tener lejos?" crlf)
+	(printout t "1: Transporte." crlf)	  	
+	(printout t "2: Educacion." crlf) 
+	(printout t "3: Sanidad." crlf)	  	
+	(printout t "4: Ocio." crlf)	
+	(printout t "5: Hosteleria." crlf)	 
+	(printout t "6: Comercio." crlf)	  
+	(bind $?tc (pregunta-lista "Introduzca todas las opciones separadas por un espacio. Pulse Intro para finalizar."))
+	(assert (serviciosLejanos))
+	(printout t crlf)
+	(printout t "Cuales de los anteriores servicios le gustaria tener lejos del domicilio?" crlf)
+	(bind $?ts (pregunta-lista "Introduzca todas las opciones separadas por un espacio. Pulse Intro para finalizar."))
+	(modify ?nl (lejosPreferible $?ts)(lejosRestriccion $?tc))
+	(printout t crlf)
+)
+
+;VIVIENDA
+
+(defrule tipoVivienda
+	(cliente)
+	?na<-(necesidadesDomicilio)
+	(not (tipoDom))
+	=>
+	(printout t "Hay algun tipo de vivienda que necesiten?" crlf)
+	(printout t "1: Unifamiliar." crlf)	  	
+	(printout t "2: Apartamento." crlf)
+	(printout t "3: Me resulta indiferente." crlf)
+	(bind ?tc (pregunta-numerica "Elija una opcion " 1 3))
+	(switch ?tc
+		(case 1 then (modify ?na (tipoDomicilioRestriccion Unifamiliar))(assert (UnifamiliarRestriccion)) )
+		(case 2 then (modify ?na (tipoDomicilioRestriccion Apartamento))(assert (ApartamentoRestriccion)) )
+		(case 3 then 
+			(printout t crlf)
+			(printout t "Y algun tipo de vivienda que preferian?" crlf)
+			(printout t "1: Unifamiliar." crlf)	  	
+			(printout t "2: Apartamento." crlf)
+			(printout t "3: Me resulta indiferente." crlf)
+			(bind ?tc (pregunta-numerica "Elija una opcion " 1 3))		
+			(switch ?tc
+				(case 1 then (modify ?na (tipoDomicilioPreferencia Unifamiliar))(assert (UnifamiliarPreferencia)))
+				(case 2 then (modify ?na (tipoDomicilioPreferencia Apartamento))(assert (ApartamentoPreferencia)))
+			)
+		)
+	)
+	(printout t crlf)
+	(assert (tipoDom))
+)
+
+(defrule tipoApartamentoRestriccion
+	(cliente)
+	?na<-(necesidadesDomicilio)
+	(ApartamentoRestriccion)
+	(not (tipoDom))
+	=>
+	(printout t "Algun tipo de apartamento en concreto?" crlf)
+	(printout t "1: Si, un piso." crlf)	  	
+	(printout t "2: Si, un duplex." crlf)
+	(printout t "3: Si, un triplex." crlf)
+	(printout t "4: No." crlf) ;Colectivo
+	(bind ?tc (pregunta-numerica "Elija una opcion " 1 4))
+	(switch ?tc
+		(case 1 then (modify ?na (tipoDomicilioRestriccion Piso)) )
+		(case 2 then (modify ?na (tipoDomicilioRestriccion Duplex)) )
+		(case 3 then (modify ?na (tipoDomicilioRestriccion Triplex)) )
+	)
+	(printout t crlf)
+	(assert (tipoDom))
+)
+
+(defrule tipoApartamentoRestriccion
+	(cliente)
+	?na<-(necesidadesDomicilio)
+	(UnifamiliarRestriccion)
+	(not (tipoDom))
+	=>
+	(printout t "Algun tipo de casa unifamiliar en concreto?" crlf)
+	(printout t "1: Si, una aislada." crlf)	  	
+	(printout t "2: Si, una pareada." crlf)
+	(printout t "3: Si, una adosada." crlf)
+	(printout t "4: No." crlf) ;Colectivo
+	(bind ?tc (pregunta-numerica "Elija una opcion " 1 4))
+	(switch ?tc
+		(case 1 then (modify ?na (tipoDomicilioRestriccion Aislada)) )
+		(case 2 then (modify ?na (tipoDomicilioRestriccion Pareada)) )
+		(case 3 then (modify ?na (tipoDomicilioRestriccion Adosada)) )
+	)
+	(printout t crlf)
+	(assert (tipoDom))
+)
+
+(defrule tipoApartamentoPreferencia
+	(cliente)
+	?na<-(necesidadesDomicilio)
+	(ApartamentoPreferencia)
+	(not (tipoDom))
+	=>
+	(printout t "Algun tipo de apartamento en concreto?" crlf)
+	(printout t "1: Si, un piso." crlf)	  	
+	(printout t "2: Si, un duplex." crlf)
+	(printout t "3: Si, un triplex." crlf)
+	(printout t "4: No." crlf) ;Colectivo
+	(bind ?tc (pregunta-numerica "Elija una opcion " 1 4))
+	(switch ?tc
+		(case 1 then (modify ?na (tipoDomicilioRestriccion Piso)) )
+		(case 2 then (modify ?na (tipoDomicilioRestriccion Duplex)) )
+		(case 3 then (modify ?na (tipoDomicilioRestriccion Triplex)) )
+	)
+	(printout t crlf)
+	(assert (tipoDom))
+)
+
+(defrule tipoApartamentoPreferencia
+	(cliente)
+	?na<-(necesidadesDomicilio)
+	(UnifamiliarRestriccion)
+	(not (tipoDom))
+	=>
+	(printout t "Algun tipo de casa unifamiliar en concreto?" crlf)
+	(printout t "1: Si, una aislada." crlf)	  	
+	(printout t "2: Si, una pareada." crlf)
+	(printout t "3: Si, una adosada." crlf)
+	(printout t "4: No." crlf) ;Colectivo
+	(bind ?tc (pregunta-numerica "Elija una opcion " 1 4))
+	(switch ?tc
+		(case 1 then (modify ?na (tipoDomicilioRestriccion Aislada)) )
+		(case 2 then (modify ?na (tipoDomicilioRestriccion Pareada)) )
+		(case 3 then (modify ?na (tipoDomicilioRestriccion Adosada)) )
+	)
+	(printout t crlf)
+	(assert (tipoDom))
+)
+
+
+
+
+(defrule finPreguntas "En esta regla terminamos de hacer preguntas y pasamos a inferir los datos recopilados"
 	(cliente)
 	=>
 	(printout t crlf) 
 	(printout t "---------- Fin del modulo de preguntas. ----------" crlf)
 	(printout t crlf) 
-	(focus filtrado)
+	(focus inferencia)
 )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;MODULO 1.5: INFERENCIA DE DATOS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 
 
