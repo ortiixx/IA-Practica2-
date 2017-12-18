@@ -638,7 +638,10 @@
 
 (defmessage-handler Recomendacion imprime primary()
 	(printout t "Nivel de recomendacion: ")
-	if(eq(?self:grado Excelente) then (printout t "Excelente"))
+	(if (eq ?self:grado Excelente) then (printout t "Excelente" crlf)
+	else (if (eq ?self:grado Recomendado) then (printout t "Recomendado" crlf)
+	else (printout t "Parcial" crlf))
+	)
 )
 
 
@@ -797,6 +800,45 @@
 		(allowed-values Transporte Educacion Sanidad Ocio Hosteleria Comercio)
 	)
 )
+
+(deftemplate recomOrd "deftemplate usado para ordenar las recomendaciones"
+	(slot recomendacion
+		(type INSTANCE)
+	)
+	(slot posicion
+		(type INTEGER)
+	)
+)
+
+
+(defmodule MAIN (export ?ALL))
+(defrule comienzo "inicio"
+	(initial-fact)
+	=>
+	(printout t crlf)
+	(printout t "------- SISTEMA DE ASISTENCIA -------" crlf)
+	(printout t "----------- EN ALQUILERES -----------" crlf)
+	(printout t "[By Marco Terral, Alberta Longhini y Albert Ortiz]" crlf)
+	(printout t crlf)
+	(assert (cliente))
+	(bind ?i1 (make-instance Recomendacion1 of Recomendacion))
+	(send ?i1 put-numFallo 10)
+	(send ?i1 put-grado Parcial)
+	(bind ?i2 (make-instance Recomendacion2 of Recomendacion))
+	(send ?i2 put-numFallo 20)
+	(send ?i2 put-grado Excelente)
+	(bind ?i2 (make-instance Recomendacion3 of Recomendacion))
+	(send ?i2 put-numFallo 20)
+	(send ?i2 put-grado Excelente)
+	(bind ?i2 (make-instance Recomendacion4 of Recomendacion))
+	(send ?i2 put-numFallo 20)
+	(send ?i2 put-grado Excelente)
+	(bind ?i2 (make-instance Recomendacion5 of Recomendacion))
+	(send ?i2 put-numFallo 20)
+	(send ?i2 put-grado Excelente)
+	(focus escribir)
+)
+
 
 ;;;MAIN;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1557,40 +1599,56 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmodule escribir
 	(import MAIN ?ALL)  
-	(import filtrado ?ALL)
-	(import descartepeor ?ALL)
-	(import preguntas ?ALL)
-	(import elegirmejor ?ALL)
 	(export ?ALL)
 )
 
-(defrule obtenerRecomendaciones "regla para obtener todas las recomendaciones generadas"
-(bind ?pos 1)
+(defrule obtenerRecomendaciones
+	(cliente)
+	=>
+	(bind ?pos 1)
 	(bind $?recomendaciones (find-all-instances ((?inst Recomendacion)) TRUE))
 	(printout t crlf)
 	(printout t "Todas las posibles recomendaciones: " crlf)
 	(printout t "----------------------------------- " crlf)
 	(progn$ (?i ?recomendaciones)
-		(assert (solucionOrdenada (posicion ?pos) (recomendacion ?i)))	
-		(bind ?grado (send ?i get-gradoRecomendacion))
+		(assert (recomOrd (posicion ?pos) (recomendacion ?i)))	
+		(bind ?grado (send ?i get-numFallo))
 		(printout t " "(instance-name ?i) " " ?grado crlf)
 		(bind ?pos (+ ?pos 1))		
 	)  
-	(if(> ?pos 1) then (assert (PrimeraPos 1)) (assert (numeroR (- ?pos 1))) (assert(MaxGradoRec 0)))
+	(if(> ?pos 1) then (assert (primeraP 1)) (assert (numeroR (- ?pos 1))) (assert(MaxGradoRec 0)))
+	(assert (excCount 0))
 	(printout t crlf)
-	(printout t "------------------------  ASIGNATURAS RECOMENDADAS -----------------------" crlf)
+	(printout t "------------------------  VIVIENDAS RECOMENDADAS -----------------------" crlf)
 	(printout t crlf)
 )
 
-(defrule ordenarRecomendaciones "regla para ordenar las recomendaciones"
-(not (FIN))
-(cliente)
-=>
-
+(defrule mostrarRecomendacionesExcelentes
+	(cliente)
+	?primeraR<-(primeraP ?i)
+	?excC<-(excCount ?c)
+	?rec<-(recomOrd(posicion ?p)(recomendacion ?r))
+	(test (and(eq ?p ?i)(eq Excelente (send ?r get-grado))))
+	(test (< ?c 3))
+	=>
+	(retract ?primeraR)
+	(retract ?excC)
+	(assert (PrimeraP (+ 1 ?i)))
+	(assert (excCount (+ 1 ?c)))
+	(assert (FIN))
+	(send ?r imprime)
 )
 
-(defrule sinRecomendaciones "regla para mostrar la ausencia de recomendaciones generadas"
-(cliente)
-=>
-(assert(FIN))
+(defrule ordenarRecomendaciones 
+	(not (FIN))
+	(cliente)
+	?maxgrH <- (MaxGradoRec ?mxgr)
+	?rec1 <- (recomOrd (posicion ?p1) (recomendacion ?recomendacion1))
+	?rec2 <- (recomOrd (posicion ?p2) (recomendacion ?recomendacion2))
+	(test (and (> (send ?recomendacion2 get-numFallo) (send ?recomendacion1 get-numFallo)) (< ?p1 ?p2)))
+	=>    
+	(modify ?rec1 (posicion ?p2))
+	(modify ?rec2 (posicion ?p1)) 
+	(bind ?pos_max (send ?recomendacion2 get-numFallo))
+	(if (> ?pos_max  ?mxgr) then (retract ?maxgrH) (assert(MaxGradoRec ?pos_max)))
 )
